@@ -4,7 +4,7 @@ import os
 import time
 
 path = 'data\Video'
-path_saved = 'Frame'
+path_saved = 'data\Frame'
 step = 20
 
 for i in os.listdir(path):
@@ -12,7 +12,10 @@ for i in os.listdir(path):
     video_name = i.split('.')[0]
     location_saved = os.path.join(path_saved, video_name)
     if not os.path.exists(location_saved):
-        os.mkdir(location_saved, 0o666)
+        try:
+            os.mkdir(location_saved)
+        except:
+            continue
     frames = read_video(file_vid, step)
     count = 0
     for frame in frames:

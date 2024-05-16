@@ -10,7 +10,7 @@ def read_video(file, step, duration = None):
         count +=1
         if _== False:
             break
-        elif count % step == 2:
+        elif count % step == 0:
             # h, w, _ = frame.shape
             # frame = cv2.resize(frame,(int(w/2),int(h/2)))
             frame_list.append(frame)
