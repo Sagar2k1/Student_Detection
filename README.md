@@ -1,1 +1,1 @@
-# Student_Detection
+# Student Detection Project
