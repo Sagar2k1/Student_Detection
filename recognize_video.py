@@ -6,12 +6,7 @@ import time
 import pickle
 import numpy as np
 from imutils.video import FPS
-
-# load serialized face detector
-print("Loading Face Detector...")
-protoPath = "face_detection_model/deploy.prototxt"
-modelPath = "face_detection_model/res10_300x300_ssd_iter_140000.caffemodel"
-detector = cv2.dnn.readNetFromCaffe(protoPath, modelPath)
+from mtcnn.mtcnn import MTCNN  # Make sure to install MTCNN via pip
 
 # load serialized face embedding model
 print("Loading Face Recognizer...")
@@ -22,13 +17,16 @@ recognizer = pickle.loads(open("output/recognizer.pickle", "rb").read())
 le = pickle.loads(open("output/le.pickle", "rb").read())
 
 # initialize the video file stream
-video_path = "IMG_9393.mp4"
+video_path = "IMG_0077.mp4"
 print("Opening video file...")
 vs = cv2.VideoCapture(video_path)
 time.sleep(2.0)
 
 # start the FPS throughput estimator
 fps = FPS().start()
+
+# initialize MTCNN face detector
+detector = MTCNN()
 
 # loop over frames from the video file stream
 while True:
@@ -45,25 +43,20 @@ while True:
     frame = imutils.resize(frame, width=600)
     (h, w) = frame.shape[:2]
 
-    # construct a blob from the image
-    imageBlob = cv2.dnn.blobFromImage(
-        cv2.resize(frame, (300, 300)), 1.0, (300, 300),
-        (104.0, 177.0, 123.0), swapRB=False, crop=False)
-
-    # apply OpenCV's deep learning-based face detector to localize faces in the input image
-    detector.setInput(imageBlob)
-    detections = detector.forward()
+    # detect faces in the frame
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    detections = detector.detect_faces(rgb_frame)
 
     # loop over the detections
-    for i in range(0, detections.shape[2]):
-        # extract the confidence (i.e., probability) associated with the prediction
-        confidence = detections[0, 0, i, 2]
+    for detection in detections:
+        confidence = detection['confidence']
 
         # filter out weak detections
         if confidence > 0.7:
             # compute the (x, y)-coordinates of the bounding box for the face
-            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-            (startX, startY, endX, endY) = box.astype("int")
+            box = detection['box']
+            (startX, startY, endX, endY) = (
+                box[0], box[1], box[0] + box[2], box[1] + box[3])
 
             # extract the face ROI
             face = frame[startY:endY, startX:endX]
